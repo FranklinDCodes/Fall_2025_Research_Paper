@@ -37,40 +37,42 @@ fgdoane42@tntech.edu}
 % \end{IEEEkeywords}
 
 \section{Dataset Creation}
+\subsection{Get list of stocks by market cap}
+\subsection{Generate stock list}
+\subsection{Download data}
+\subsection{Store data in csv files}
 
-\subsection{Get stock list}
+\section{Training}
+\subsubsection{Load and unpack config}
+    Config loaded as a json object .
+\subsection{Load dataset}
+\subsubsection{Init dataset object}
+    The dataset object is initialized and given config. Then the load dataset method is called which does the following.
+\subsubsection{Verify files}
+    Loads all csvs in dataset and verifies a minimum length. A legacy feature at this point.
+\subsubsection{Split files into task groups}
+    List of valid files is split into groups to have each group loaded with threads.
+\subsubsection{Open dataset thread pool}
+    Open thread pool to load files.
+\subsubsection{Load csv files}
+    Open every file from directory listed in config. Load as pandas dataframe with date index column and put them all in a list.
+\subsubsection{Calculate indicators}
+    Calculate all additional features listed in configs. Cut out any data at the front of the dataframes that is missing these features (e.g. for rolling avgs).
+\subsubsection{Create date feature}
+    1hot encode day of the week and add the new weekday features to all dataframes.
+\subsubsection{Slice data into training examples}
+    Use rolling window to cut each dataframe into training example dataframes with n day history. All examples get added to a list and labels are made into a dataframe of their own.
+\subsubsection{Normalize examples}
+    Each dataframe training example is normalized using norm function from config.
+\subsubsection{Create tensor input}
+    Each dataframe is converted to numpy then a tensor with the datatype and device listed in the config. All labels are converted a single tensor as well.
+\subsubsection{}
 
-
-\begin{enumerate}
-    \item Get list of stocks by market cap
-download from the internet
-    \item Generate stock list
-    \item Download data
-    \item Store data in csv files
-\end{enumerate}
-\subsection{Training}
-\begin{enumerate}
-    \item Load and unpack config
-    \item Load dataset
-        \begin{enumerate}
-            \item Open dataset thread pool
-            \item Load csv files
-            \item Calculate indicators
-            \item Create date feature
-            \item Slice into training examples
-            \item Normalize examples
-            \item Create tensor input
-        \end{enumerate}
-    \item Create model
-        \begin{enumerate}
-            \item Dynamically load model class
-            \item Init model
-            \item Set optimizer
-            \item 
-        \end{enumerate}
-\end{enumerate}
-\subsection{Evaluation}
-
+\subsubsection{Dynamically load model class}
+    The Python file containing the model class is loaded by name using importlib.
+\subsubsection{Init model}
+    The pytorch model is initialized. The custom model class is given a name, starting LR, and input feature count from dataset.
+\subsubsection{Set optimizer}
 
 
 % \section{Ease of Use}

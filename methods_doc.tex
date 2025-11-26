@@ -90,9 +90,14 @@ fgdoane42@tntech.edu}
     Init object and pass in dataset object (and test set indices if applicable)
 \subsubsection{Pick test indices}
     If not test set indices were passed, create list of indices and either random sample indices (legacy) or slice chunk off the front to create test set indices.
-\subsubsection{Make test set}
-    Use indices to make a mask and remove all test examples from training index set
-
+\subsubsection{Seperate test set}
+    Use indices to make a mask and remove test examples from all indices to get training set indices
+\subsubsection{Shuffle train set}
+    random.shuffle train set indices
+\subsubsection{Split batches}
+    Split train set indices into batches using a list comprehension and slicing with option to drop last partial batch. Transforms list[int] -> list[list[int]]. Casts result to tensor.
+\subsubsection{Setup first inputs}
+    Create empty list for inputs and labels. Prefetch first n batches by indexing them out of dataset and adding them to inputs and labels. Remove these indices from batch indices.
 
 
 

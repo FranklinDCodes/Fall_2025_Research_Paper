@@ -37,14 +37,17 @@ fgdoane42@tntech.edu}
 % \end{IEEEkeywords}
 
 \section{Dataset Creation}
-\subsection{Get list of stocks by market cap}
-\subsection{Generate stock list}
-\subsection{Download data}
-\subsection{Store data in csv files}
+% \subsection{Get list of stocks by market cap}
+% \subsection{Generate stock list}
+% \subsection{Download data}
+% \subsection{Store data in csv files}
 
 \section{Training}
-\subsubsection{Load and unpack config}
-    Config loaded as a json object .
+\subsection{Config}
+\subsubsection{Load}
+    Load config as json object with path from positional arg
+\subsubsection{Unpack}
+    Unpack config keys into variables
 \subsection{Load dataset}
 \subsubsection{Init dataset object}
     The dataset object is initialized and given config. Then the load dataset method is called which does the following.
@@ -66,14 +69,34 @@ fgdoane42@tntech.edu}
     Each dataframe training example is normalized using norm function from config.
 \subsubsection{Create tensor input}
     Each dataframe is converted to numpy then a tensor with the datatype and device listed in the config. All labels are converted a single tensor as well.
-\subsubsection{}
-
+\subsection{Load Model}
 \subsubsection{Dynamically load model class}
     The Python file containing the model class is loaded by name using importlib.
-\subsubsection{Init model}
-    The pytorch model is initialized. The custom model class is given a name, starting LR, and input feature count from dataset.
+\subsubsection{Call init}
+    Init custom model class. The custom model class is passed a name, starting LR, and input feature count from dataset. The model inherits from torch.nn.Module which is also inited.
+\subsubsection{Setup pytorch objects}
+    Model class init sets up LSTM object and Sequential object for forward passes, a default optimizer, a null loss func and an empty history.
 \subsubsection{Set optimizer}
+    Call model set optim method to initialize and save optimizer to model class.
+\subsubsection{Send to device}
+    Set model to device specified in config.
+\subsection{Scheduler}
+\subsubsection{Init scheduler}
+    Pass optimizer from model. Give it kwargs from config
+\subsection{Dataloader}
+\subsubsection{Check for test set}
+    Check's to see if the model save config contains test set indices. For loading a partially trained model. Indices get set after init if none are there. Pretty much a vestigial feature.
+\subsubsection{Call init}
+    Init object and pass in dataset object (and test set indices if applicable)
+\subsubsection{Pick test indices}
+    If not test set indices were passed, create list of indices and either random sample indices (legacy) or slice chunk off the front to create test set indices.
+\subsubsection{Make test set}
+    Use indices to make a mask and remove all test examples from training index set
 
+
+
+
+\section{Evaluation}
 
 % \section{Ease of Use}
 

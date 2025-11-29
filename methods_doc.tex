@@ -42,12 +42,15 @@ fgdoane42@tntech.edu}
 % \subsection{Download data}
 % \subsection{Store data in csv files}
 
-\section{Training}
-\subsection{Config}
+\section{Training Setup}
+\subsection{Load Config}
 \subsubsection{Load}
     Load config as json object with path from positional arg
 \subsubsection{Unpack}
     Unpack config keys into variables
+\subsection{Setup regulator}
+\subsubsection{Init regulator}
+    Pass starting learning rate and other kwargs from config
 \subsection{Load dataset}
 \subsubsection{Init dataset object}
     The dataset object is initialized and given config. Then the load dataset method is called which does the following.
@@ -69,7 +72,7 @@ fgdoane42@tntech.edu}
     Each dataframe training example is normalized using norm function from config.
 \subsubsection{Create tensor input}
     Each dataframe is converted to numpy then a tensor with the datatype and device listed in the config. All labels are converted a single tensor as well.
-\subsection{Load Model}
+\subsection{Load model}
 \subsubsection{Dynamically load model class}
     The Python file containing the model class is loaded by name using importlib.
 \subsubsection{Call init}
@@ -80,10 +83,10 @@ fgdoane42@tntech.edu}
     Call model set optim method to initialize and save optimizer to model class.
 \subsubsection{Send to device}
     Set model to device specified in config.
-\subsection{Scheduler}
+\subsection{Setup scheduler}
 \subsubsection{Init scheduler}
     Pass optimizer from model. Give it kwargs from config
-\subsection{Dataloader}
+\subsection{Setup dataloader}
 \subsubsection{Check for test set}
     Check's to see if the model save config contains test set indices. For loading a partially trained model. Indices get set after init if none are there. Pretty much a vestigial feature.
 \subsubsection{Call init}
@@ -97,8 +100,38 @@ fgdoane42@tntech.edu}
 \subsubsection{Split batches}
     Split train set indices into batches using a list comprehension and slicing with option to drop last partial batch. Transforms list[int] -> list[list[int]]. Casts result to tensor.
 \subsubsection{Setup first inputs}
-    Create empty list for inputs and labels. Prefetch first n batches by indexing them out of dataset and adding them to inputs and labels. Remove these indices from batch indices.
+    Create empty list for inputs and labels. Prefetch first n batches by indexing them out of dataset and adding them to input and label sets. Remove these indices from batch indices.
+\subsubsection{Load test set}
+    Index test set and labels out of data and Store
+\section{Training Loop (per epoch)}
+\subsection{Setup}
+\subsubsection{Get regulator coefs}
+    Pass regulator lr and get the coefficient for each logit. Coefficients will be stepped down if LR has changed
+\subsubsection{Update loss}
+    Call function to init custom MSE loss and pass it the regularization coefficients. Call method to set new loss for model class.
+\subsection{Train batches}
+\subsubsection{Unpack dataloader}
+    Each iteration grabs a batch from the loaded set of batches. If the loaded set is empty, the dataloader loads indexes more batches out of the dataset. Continues until all batch indices are popped.
+\subsubsection{Forward pass}
+    Call model forward with batch inputs
+\subsubsection{Call backward pass}
+    Pass model backpass method the logits and batch labels (with added time series dimension). Starts by putting model in train mode.
+\subsubsection{Calc loss}
+    Zero optimizer gradient then run model's built-in loss function. Backwards' the loss.
+\subsubsection{Optimize}
+    Step optimizer.
+\subsection{Save}
+\subsubsection{Checkpoint model}
+    Save epoch copy of model as pkl to model save dir. Includes model params as well as model training history.
+\subsection{Train-time eval}
 
+\subsubsection{Eval setup}
+    Set model in eval mode. Create data structures for saving outcomes and losses.
+
+
+
+\subsubsection{Update scheduler}
+    Send average example loss to scheduler.
 
 
 \section{Evaluation}

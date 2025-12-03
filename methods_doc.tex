@@ -189,8 +189,95 @@ fgdoane42@tntech.edu}
     The Python file containing the model class is loaded by name using importlib.
 \subsubsection{Call init}
     Init custom model class. The custom model class is passed a name, starting LR of 0, and input feature count from config. The model inherits from torch.nn.Module which is also inited.
-\subsubsection{Setup pytorch objects}
-    Model class init sets up LSTM object and Sequential object for forward passes, a default optimizer, a null loss func and an empty history.
+\subsubsection{Load model save}
+    Loads model params from pkl file.
+\subsection{Start agent}
+\subsubsection{Call agent init}
+    Initialize agent object and pass config, model, and starting balance.
+\subsubsection{Unpack agent parameters}
+    Agent init unpacks all of it's rules for buying and selling from config.
+\subsubsection{Create data structures}
+    Agent init creates empty data structures for tracking outcomes, balance, owned stocks, and labels for owned stocks.
+\subsection{Load dataset}
+\subsubsection{Init dataset and load}
+    The dataset object is initialized and given config. The load method is called which does the following.
+\subsubsection{Read csvs}
+    The dataset object reads all csvs in dataset directory and store them in a dict with the format \{"ticker": dataframe\}
+\subsubsection{Calculate additional features}
+    Iterate through dataset keys and calc all additional features specified in training config.
+\subsubsection{1-hot encode dates}
+    For each dataframe in dataset, keep date column as index but add 1-hot encoded day of the week columns.
+\subsubsection{Setup comparison stock}
+    Look for saved file of balances from investing with comparison stock (e.g. S&P). If not, load comparison stock data from dataset.
+\subsection{Setup for iteration}
+\subsubsection{Init date range object}
+    Initialize custom date range iterator and pass it the start and end dates to iterate over. Each date in the iteration will be the day to predict the outcome of.
+\section{Evaluation loop (per day in date range)}
+\subsection{Get inputs}
+\subsubsection{Attempt to index date}
+    For each stock dataframe, attempt to index the current date in the simulation. If it fails, return no data (common for weekends or holidays).
+\subsubsection{Get input sequence}
+    If date was indexed successfully, grab 50 day sequence prior for model input.
+\subsubsection{Get last price}
+    Index the close price of last day of sequence. This will be considered the purchase price if stock is purchased.
+\subsubsection{Normalize input sequence}
+    Use normalization function from training to normalize sequence.
+\subsubsection{Turn input into tensor}
+    Drop date string index column from dataframe and convert to torch tensor.
+\subsubsection{Get label data}
+    Index current date row out of dataframe and turn into dict to use for labels.
+\subsubsection{Compile data}
+    Put all inputs and label from all stocks for the day into an iterable.
+\subsection{Iterate through inputs (for each stock)}
+\subsubsection{Unpack data}
+    Unpack stock ticker, input, final price in input sequence, and day candlestick (labels).
+\subsubsection{Forward pass}
+    Forward pass input through model.
+\subsubsection{Save data}
+    Save model logits, and all other unpacked stock data into data structures.
+\subsection{Purchase}
+\subsubsection{Call agent buy}
+    Tell agent to make purchases. Pass model predictions and labels.
+\subsubsection{Filter predictions}
+    The agent buy function filters predictions for ones that meet the criteria for purchasing.
+\subsubsection{Allocate funds}
+    If there are stocks that meet the criteria, divide current amongst them equally. Agent will remove stocks if there are too many to have minimum \$1 per purchase.
+\subsubsection{Finalize purchases}
+    Add purchased stocks and their purchase amount to agent stocks. Save label data as well.
+\subsection{Sell}
+\subsubsection{Call agent sell}
+    Tell agent to sell stocks.
+\subsubsection{Calculate aim prices}
+    Calculate prices that agent aims to sell stocks at, as well as prices it will stop loss at.
+\subsubsection{Calculate increases}
+    Use label data to calculate what the increase (positive or negative) would've been for each stock.
+\subsubsection{Calculate sale totals}
+    Use buy totals and increases to calculate sale totals. Sum them to get new balance.
+\subsubsection{Update outcome counts}
+    Update agent's stored counts of different outcome types for statistical analysis.
+\subsubsection{Update increase averages}
+    Update agent's stored averages of increase percentages for different outcome types.
+\subsubsection{Remove agent stocks}
+    Remove all stocks and labels from agent's owned list.
+\subsection{Update}
+\subsubsection{Update agent history}
+    Add new balance, buy count, and increases to history for charting.
+\subsubsection{Update comparison stock}
+    If generating data to compare to agent, calculate what the stocks increase would've been and update balance.
+\section{Evaluation aftermath}
+\subsection{Files}
+\subsubsection{Calculate win rate}
+    Use outcome counts to calculate win rate.
+\subsubsection{Save all data}
+    Save balances, buy counts, increases, outcome counts, and generated comparison data to results directory.
+\subsection{Charts}
+\subsubsection{Create and save charts}
+    Generate chart and save to results directory.
+
+
+
+
+
 
     
 

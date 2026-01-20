@@ -37,47 +37,13 @@ fgdoane42@tntech.edu}
 % \end{IEEEkeywords}
 
 \section{Dataset Creation}
-\subsection{Generate stock list}
-\subsubsection{Download stocks by market cap}
-    I downloaded a list of all stocks ranked by market cap off the internet, and saved it as a .tsv
-\subsubsection{Read tsv}
-    Run the stock list builder, which starts by reading in the file as a pandas dataframe
-\subsubsection{Iterate while stock list is $<$ 1500}
-    Create empty list for stock symbols. Continue to perform the following while the stock list len is $<$ 1500.
-\subsubsection{Grab next highest symbol}
-    Grab next symbol from ranking dataframe.
-\subsubsection{Download data}
-    Attempt to download day candles going back to the date 01/01/2011 - $\Delta$(days=100).
-\subsubsection{Check dates captured}
-    Check if the download captured 01/01/2011 (oldest date to be used) and 12/31/2024 (most recent date to be used).
-\subsubsection{Check context captured}
-    Check that there are at least 50 days of data before the first date (so that the first training example will be for 01/01/2011)
-\subsubsection{Judge stock}
-    If stock data download captured data range and addition context, it gets added to the list. Otherwise it gets rejected.
-\subsubsection{Save list}
-    Once 1500 stocks have been accepted into the list, save it as a text file of tickers.
-\subsection{Setup downloads}
-\subsubsection{Decide on train set date ranges}
-    I made a .md file that numbers and outlines the date range for each dataset.
-\subsubsection{Decide on eval set date ranges}
-    Each evaluation set is 1 year long and has a first date that is 1 year after the end of the training set data is corresponds with.
-\subsubsection{Create bash files}
-    I created 2 bash files for training and evaluation that run the download script for each dataset with it's unique arguments.
-\subsection{Download dataset (for each training and eval set)}
-\subsubsection{Collect args}
-    Collect arguments pertaining to date range and save location.
-\subsubsection{Load stock list}
-    Load stock list text file as a list.
-\subsubsection{Open thread pool}
-    Open pool of threads for calling downloads like follows based on each stock in the list.
-\subsubsection{Call download}
-    Download from (01/01/start\_year - context*2), to 12/31/end\_year with auto-adjust = false
-\subsubsection{Update indexing structure}
-    Reset columns to be base OHLCV. Reset df index.
-\subsubsection{Get important data}
-    Index needed data out of dataframe with (first day of start\_year - context) : (last day of end\_year)
-\subsubsection{Save}
-    Save stock data to csv file
+\subsection{Find stocks by market cap}
+    I downloaded a list of all stocks ranked by market cap off the internet
+\subsection{Select largest stocks with sufficient data}
+    Next, I used the list along with the yahoo finance api to select the 1500 most valuable companies that satisfied the following conditions: data for training dating back to the beginning of 2011, and additional data before that sufficient for indicator calculation and for creating the first time-series input with Jan 01 2011 as it's last date.
+\subsection{Download train and test data}
+    I used 10 training datasets, the first one containing inputs for all market days in 2011-2012, with each following adding 1 sequential year of data. There are 10 evaluation sets, each contain data for a single year, from 2014 - 2023. Each training set and testing set downloaded data for every stock in the list using the yahoo finance api. Each download with the size of the dataset, with additional older data sufficient for calculating indicators and for supplying the 50 day history for the first day of the year.
+
 
 \section{Training Setup}
 \subsection{Load Config}

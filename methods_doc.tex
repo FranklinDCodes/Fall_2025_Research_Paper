@@ -76,6 +76,12 @@ fgdoane42@tntech.edu}
 \subsection{Validation}
     After all the batches are used for training, validation occurs. The model predicts all of the examples in the validation set and loss is calculated. Unlike during training, the loss in validation is calculated as a pure Mean Squared Error loss with no magnitude penalties. The loss is then used to update the learning rate scheduler.
 
+\begin{figure}[htbp]
+\centerline{\includegraphics[width=\columnwidth]{MM_testing.png}}
+\caption{Possible position outcomes.}
+\label{fig}
+\end{figure}
+
 % \subsection{Setup regulator}
 % \subsubsection{Init regulator}
 %     Pass starting learning rate and other kwargs from config

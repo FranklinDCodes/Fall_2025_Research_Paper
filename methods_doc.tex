@@ -36,31 +36,29 @@ fgdoane42@tntech.edu}
 % component, formatting, style, styling, insert
 % \end{IEEEkeywords}
 
-\section{Dataset Creation}
-\subsection{Find stocks by market cap}
+\subsection{Dataset Creation}
+\subsubsection{Find stocks by market cap}
     I downloaded a list of all stocks ranked by market cap off the internet
-\subsection{Select largest stocks with sufficient data}
+\subsubsection{Select largest stocks with sufficient data}
     Next, I used the list along with the yahoo finance api to select the 1500 most valuable companies that satisfied the following conditions: data for training dating back to the beginning of 2011, and additional data before that sufficient for indicator calculation and for creating the first time-series input with Jan 01 2011 as it's last date.
-\subsection{Download train and test data}
+\subsubsection{Download train and test data}
     I used 10 training datasets, the first one containing data for all market days in 2011-2012, with each following adding 1 sequential year of data. There are 10 evaluation sets, each contain data for a single year, from 2014 - 2023. Each training set and testing set downloaded data for every stock in the list using the yahoo finance api. All data is made up of 1 day candlesticks. Each download with the size of the dataset, with additional older data sufficient for calculating indicators and for supplying the 50 day history for the first day of the year.
 
 
-\section{Training Setup}
-\subsection{Load dataset}
-    Dataset is loaded from csv files.
-\subsection{Calculate additional features}
-    The only additional feature calculated on the data is the day of the week 1-hot-encoded into 5 separate features.
-\subsection{Slice into training examples}
-    The data then gets cut into time series, each with a length of 50. The data from the day following each time series is used to create the label, which consist of the relative increase in high price and low price compared to the close price of the previous day. The training examples from each stock get concatenated together into 1 dataset.
-\subsection{Normalize}
+\subsection{Training Setup}
+\subsubsection{Calculate additional features}
+    The dataset is loaded and the day of the week is 1-hot-encoded into 5 separate features that are added.
+\subsubsection{Slice into training examples}
+    The data then gets cut into time series, each with a length of 50. The data from the day following each time series is used to create the label, which consist of the relative increase in high price and low price compared to the close price of the previous day.
+\subsubsection{Normalize}
     Each training example gets all of it's price data normalized together on a scale of -1 to 1. Similarly, the volume data gets normalized on a scale of -1 to 1.
-\subsection{Separate validation set}
-    Once all the training examples have been created, 15\% of the training examples are sliced off of the back of the dataset to become the validation set. The rest of the examples is the training set.
-\subsection{Shuffle training data}
-    The ordering of the training set gets shuffled.
-\subsection{Split batches}
+\subsubsection{Separate validation set}
+    15\% of the training examples are sliced off of the back of the dataset to become the validation set.
+\subsubsection{Shuffle training data}
+    The ordering of the training set gets shuffled according to random seed.
+\subsubsection{Split batches}
     The training data gets split into whole batches of size 200.
-\subsection{Initialize model}
+\subsubsection{Initialize model}
     The model is initialized with random parameters. The model is an LSTM with 1 hidden layer of size 64. The rest of the model architecture is depicted in ``Fig.~\ref{fig1}''.
     \begin{figure}[htbp]
     \centerline{\includegraphics[width=0.2\columnwidth]{MM_nn_structure.png}}
@@ -68,28 +66,28 @@ fgdoane42@tntech.edu}
     \label{fig1}
     \end{figure}
 
-\section{Training Loop (per epoch)}
-\subsection{Calculate loss}
+\subsection{Training Loop (per epoch)}
+\subsubsection{Calculate loss}
     The loss for each batch is calculated with formula ``\eqref{loss}'' . The formula utilizes Mean Squared Error loss and a magnitude penalty for the logits.
     \begin{equation}
         Loss = mse(Y, \hat{Y}) + \lambda\sum_{i=1}^{B}(\hat{Y}_{i, 1}) - \lambda\sum_{i=1}^{B}(\hat{Y}_{i, 2})\label{loss}
     \end{equation}
     Here the first logit is the high price that the model is predicting, and the second is the low price. B represents the batch size, and $\lambda$ is the magnitude penalty coefficient.
-\subsection{Optimize}
+\subsubsection{Optimize}
     The loss is backpropagated for each batch, and the parameters are updated with the Adam optimizer. The learning rate for the optimizer starts at 1e-3, and is set by the PyTorch LowerOnPlateau scheduler. The metric tracked by the scheduler is validation loss.
-\subsection{Validation}
+\subsubsection{Validation}
     After all the batches are used for training, validation occurs. The model predicts all of the examples in the validation set and loss is calculated. Unlike during training, the loss in validation is calculated as a pure Mean Squared Error loss with no magnitude penalties. The loss is then used to update the learning rate scheduler.
 
-\section{Testing}
-\subsection{Dataset setup}
+\subsection{Testing}
+\subsubsection{Dataset setup}
     The testing set is loaded. The data undergoes feature calculation and normalization in the same manner as the training set.
-\subsection{Agent setup}
+\subsubsection{Agent setup}
     An agent is given a trading balance of \$100.
-\subsection{Get model predictions}
+\subsubsection{Get model predictions}
     The testing process iterates over each day in the years covered by the test set. For each day at timestep $T$, the model receives data from $ T_{-50} $ through $ T_{-1} $, and predicts the high and low price at $ T $ relative to the close price at $ T_{-1} $.
-\subsection{Calculate positions opened}
+\subsubsection{Calculate positions opened}
     To test the model, the agent employed a simple trading algorithm that aims to utilize strong signals and minimize losses. If the model predicts a high price increase $ \ge 5\% $ and a low price increase $ > -0.1\% $, the agent is considered to have purchased the stock at the close price for day $ T $. The agent's balance is evenly split between each of the stocks chosen by the model, with each getting a minimum of \$1. If there are more stocks than can each be given \$1, some will be removed based on how high their high price prediction is.
-\subsection{Calculate positions sell prices}
+\subsubsection{Calculate positions sell prices}
     For each position that the agent would have opened, it closes the position during the day at timestep $ T $. The agent is attempting to sell the position for a price that is $ \ge 5\% $ increase, but will stop-loss if the price is $ \le -0.1\% $. The outcome of the position is determined using the algorithm detailed in ``Fig.~\ref{fig2}''. 
     The price that each position would've sold for is used to update the agent balance. Each position is checked first to see if the trading parameters would have caused it to sell at the open price. Then it is checked to see if it would sell during the day. Note the outcome where an a position value of both $ \le -0.1\% $ and $ \ge 5\% $ occur during a day. Since it is ambiguous which would've happened first when using data at the level of 24 hours, it is considered a stop-loss in the interest of being conservative.
     \begin{figure}[htbp]
@@ -97,15 +95,15 @@ fgdoane42@tntech.edu}
     \caption{Possible position outcomes.}
     \label{fig2}
     \end{figure}
-\subsection{Calculate positions outcomes}
+\subsubsection{Calculate positions outcomes}
     Each position that is sold at or above the aim of a $ 5\% $ increase is counted as a "win". Each position that is sold at or below the stop-loss value of a $ -0.01\% $ is considered a "loss". Any position that does not have either occur would be sold for the close price at the end of the day which was originally predicted. Such situations are considered a "time-out". 
-\subsection{Calculate results}
+\subsubsection{Calculate results}
     After process is repeated for every timestamp, the total balance increase is calculated for the whole time span, along with the rates at which each of the outcomes occur.
 
 
-% \section{Ease of Use}
+% \subsection{Ease of Use}
 
-% \subsection{Maintaining the Integrity of the Specifications}
+% \subsubsection{Maintaining the Integrity of the Specifications}
 
 % The IEEEtran class file is used to format your paper and style the text. All margins, 
 % column widths, line spaces, and text fonts are prescribed; please do not 
@@ -115,23 +113,23 @@ fgdoane42@tntech.edu}
 % as one part of the entire proceedings, and not as an independent document. 
 % Please do not revise any of the current designations.
 
-% \section{Prepare Your Paper Before Styling}
+% \subsection{Prepare Your Paper Before Styling}
 % Before you begin to format your paper, first write and save the content as a 
 % separate text file. Complete all content and organizational editing before 
-% formatting. Please note sections \ref{AA}--\ref{SCM} below for more information on 
+% formatting. Please note subsections \ref{AA}--\ref{SCM} below for more information on 
 % proofreading, spelling and grammar.
 
 % Keep your text and graphic files separate until after the text has been 
 % formatted and styled. Do not number text heads---{\LaTeX} will do that 
 % for you.
 
-% \subsection{Abbreviations and Acronyms}\label{AA}
+% \subsubsection{Abbreviations and Acronyms}\label{AA}
 % Define abbreviations and acronyms the first time they are used in the text, 
 % even after they have been defined in the abstract. Abbreviations such as 
 % IEEE, SI, MKS, CGS, ac, dc, and rms do not have to be defined. Do not use 
 % abbreviations in the title or heads unless they are unavoidable.
 
-% \subsection{Units}
+% \subsubsection{Units}
 % \begin{itemize}
 % \item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as ``3.5-inch disk drive''.
 % \item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
@@ -139,7 +137,7 @@ fgdoane42@tntech.edu}
 % \item Use a zero before decimal points: ``0.25'', not ``.25''. Use ``cm\textsuperscript{3}'', not ``cc''.)
 % \end{itemize}
 
-% \subsection{Equations}
+% \subsubsection{Equations}
 % Number equations consecutively. To make your 
 % equations more compact, you may use the solidus (~/~), the exp function, or 
 % appropriate exponents. Italicize Roman symbols for quantities and variables, 
@@ -155,11 +153,11 @@ fgdoane42@tntech.edu}
 % the equation. Use ``\eqref{eq}'', not ``Eq.~\eqref{eq}'' or ``equation \eqref{eq}'', except at 
 % the beginning of a sentence: ``Equation \eqref{eq} is . . .''
 
-% \subsection{\LaTeX-Specific Advice}
+% \subsubsection{\LaTeX-Specific Advice}
 
 % Please use ``soft'' (e.g., \verb|\eqref{Eq}|) cross references instead
 % of ``hard'' references (e.g., \verb|(1)|). That will make it possible
-% to combine sections, add equations, or change the order of figures or
+% to combine subsections, add equations, or change the order of figures or
 % citations without having to go through the file line by line.
 
 % Please don't use the \verb|{eqnarray}| equation environment. Use
@@ -178,7 +176,7 @@ fgdoane42@tntech.edu}
 % bibliography you must send the .bib files. 
 
 % {\LaTeX} can't read your mind. If you assign the same label to a
-% subsubsection and a table, you might find that Table I has been cross
+% subsubsubsection and a table, you might find that Table I has been cross
 % referenced as Table IV-B3. 
 
 % {\LaTeX} does not have precognitive abilities. If you put a
@@ -192,7 +190,7 @@ fgdoane42@tntech.edu}
 % any anyway) and it might stop a wanted equation number in the
 % surrounding equation.
 
-% \subsection{Some Common Mistakes}\label{SCM}
+% \subsubsection{Some Common Mistakes}\label{SCM}
 % \begin{itemize}
 % \item The word ``data'' is plural, not singular.
 % \item The subscript for the permeability of vacuum $\mu_{0}$, and other common scientific constants, is zero with subscript formatting, not a lowercase letter ``o''.
@@ -208,7 +206,7 @@ fgdoane42@tntech.edu}
 % \end{itemize}
 % An excellent style manual for science writers is \cite{b7}.
 
-% \subsection{Authors and Affiliations}
+% \subsubsection{Authors and Affiliations}
 % \textbf{The class file is designed for, but not limited to, six authors.} A 
 % minimum of one author is required for all conference articles. Author names 
 % should be listed starting from left to right and then moving down to the 
@@ -217,7 +215,7 @@ fgdoane42@tntech.edu}
 % affiliation. Please keep your affiliations as succinct as possible (for 
 % example, do not differentiate among departments of the same organization).
 
-% \subsection{Identify the Headings}
+% \subsubsection{Identify the Headings}
 % Headings, or heads, are organizational devices that guide the reader through 
 % your paper. There are two types: component heads and text heads.
 
@@ -236,7 +234,7 @@ fgdoane42@tntech.edu}
 % and, conversely, if there are not at least two sub-topics, then no subheads 
 % should be introduced.
 
-% \subsection{Figures and Tables}
+% \subsubsection{Figures and Tables}
 % \paragraph{Positioning Figures and Tables} Place figures and tables at the top and 
 % bottom of columns. Avoid placing them in the middle of columns. Large 
 % figures and tables may span across both columns. Figure captions should be 
@@ -277,14 +275,14 @@ fgdoane42@tntech.edu}
 % quantities and units. For example, write ``Temperature (K)'', not 
 % ``Temperature/K''.
 
-% \section*{Acknowledgment}
+% \subsection*{Acknowledgment}
 
 % The preferred spelling of the word ``acknowledgment'' in America is without 
 % an ``e'' after the ``g''. Avoid the stilted expression ``one of us (R. B. 
 % G.) thanks $\ldots$''. Instead, try ``R. B. G. thanks$\ldots$''. Put sponsor 
 % acknowledgments in the unnumbered footnote on the first page.
 
-% \section*{References}
+% \subsection*{References}
 
 % Please number citations consecutively within brackets \cite{b1}. The 
 % sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 

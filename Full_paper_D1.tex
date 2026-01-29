@@ -11,7 +11,7 @@
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
 
-\title{Penalizing LSTM Output Size for Risk Control in Stock Market Technical Analysis\\
+\title{Penalizing LSTM Output Size for Short-Term Stock Market Technical Analysis\\
 }
 
 \author{\IEEEauthorblockN{Franklin Doane}
@@ -35,7 +35,16 @@ doanefranklin89@gmail.edu}
 
 \section{Related work}
 
-Other work has been done to use LSTMs for stock market prediction. Mei Sun, Pegiuang Lang, 
+\subsection{LSTMs for market prediction}
+Mei Sun, Qingtau Li, and Peiguang Lang, published work that was focused on using LSTM architecture for market price prediction \cite{b1}. 
+Much like this work, they were aiming to use LSTM architecture for short-term price prediction; however, their focus was heavily on featuring engineering through the use of singular value composition (SVD).
+Qi Li, Norshaliza Kamaruddin, Siti Sophiayati Yuhaniz and Hamdan Amer Ali Al-Jaifi also have done work in this area \cite{b2}. Their work was on the use of LSTMs for price prediction. They aimed to augment it with the use of Symbolic Genetic Programming (SGP).
+While both of these use combine different methods with LSTM architecture to predict market prices, this work is distinct it its use of penalties for model logits.
+
+\subsection{Penalizing models for market prediction}
+Huifeng Jiang, Xuemei Hu, and Hong Jia explored different methods of penalizing logistic regressors in order to increase their performance as market indicators \cite{b3}. The authors explore penalties that apply to all model coefficients. In this work, the penalties being explored will apply only to model logits.
+
+% go one level deeper on these
 
 \subsection{LSTMs with market analysis}
 \subsection{Using }

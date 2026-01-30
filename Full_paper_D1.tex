@@ -24,7 +24,12 @@ doanefranklin89@gmail.edu}
 }
 
 % talk about the goal of the penalty somewhere
-% chart outlines?
+% emphasize difference between agent and model more when introduced and in first part of first sweep
+% all subtitles need to be title case (more caps)
+% double check tense doesn't go present when it shouldn't
+
+% helpful note from Chat on captions for figures:
+% You should be able to flip through the paper, look only at the figures + captions, and understand what is being shown — but not why it matters.
 
 \maketitle
 
@@ -38,27 +43,28 @@ doanefranklin89@gmail.edu}
 
 \section{Introduction}
 
-\section{Related work}
+\section{Related Work}
 
-    \subsection{LSTMs for market prediction}
+    \subsection{LSTMs for Market Prediction}
     Mei Sun, Qingtau Li, and Peiguang Lang, published work that was focused on using LSTM architecture for market price prediction \cite{b1}. 
     Much like this work, they were aiming to use LSTM architecture for short-term price prediction; however, their focus was heavily on featuring engineering through the use of singular value composition (SVD).
     Qi Li, Norshaliza Kamaruddin, Siti Sophiayati Yuhaniz and Hamdan Amer Ali Al-Jaifi also have done work in this area \cite{b2}. Their work was on the use of LSTMs for price prediction. They aimed to augment it with the use of Symbolic Genetic Programming (SGP).
     While both of these use combine different methods with LSTM architecture to predict market prices, this work is distinct it its use of penalties for model logits.
 
-    \subsection{Penalizing models for market predictiton}
+    \subsection{Penalizing Models for Market Predictiton}
     Huifeng Jiang, Xuemei Hu, and Hong Jia explored different methods of penalizing logistic regressors in order to increase their performance as market indicators \cite{b3}. The authors explore penalties that apply to all model coefficients. In this work, the penalties being explored will apply only to model logits.
 
     % go one level deeper on these
 
-\section{Investigating size penalty significance}
+\section{Size Penalty Ablation Test}
 
     \subsection{General Methods}
+    \label{subsec:gen_methods}
 
-        \subsubsection{Dataset Creation}
+        \subsubsection*{Dataset creation}
             The all datasets were created by downloading data consisting of daily OHLCV values for each stock being used. The list of stocks being used was determined by picking the 1500 stocks with the largest market cap that also have data for the time periods that the datasets intend to cover.
 
-        \subsubsection{Training Setup}
+        \subsubsection*{Training setup}
             The dataset is loaded and the day of the week is 1-hot-encoded into 5 separate features that are added.
             The data then gets cut into time series, each with a length of 50. The data from the day following each time series is used to create the label, which consist of the relative increase in high price and low price compared to the close price of the previous day.
             Each training example gets all of it's price data normalized together on a scale of -1 to 1. Similarly, the volume data gets normalized on a scale of -1 to 1.
@@ -94,7 +100,7 @@ doanefranklin89@gmail.edu}
                 \label{fig1}
             \end{figure}
 
-        \subsubsection{Training Methods}
+        \subsubsection*{Training methods}
             The loss for each batch is calculated with formula ``\eqref{loss}'' . The formula utilizes Mean Squared Error loss and a magnitude penalty for the logits.
             \begin{equation}
                 Loss = mse(Y, \hat{Y}) + \lambda\sum_{i=1}^{B}(\hat{Y}_{i, 1}) - \lambda\sum_{i=1}^{B}(\hat{Y}_{i, 2})\label{loss}
@@ -103,65 +109,101 @@ doanefranklin89@gmail.edu}
             The loss is backpropagated for each batch, and the parameters are updated with the Adam optimizer. The learning rate for the optimizer starts at 1e-3, and is set by PyTorch's LowerOnPlateau scheduler. The metric tracked by the scheduler is validation loss.
             At the end of each epoch, validation occurs. The model predicts all of the examples in the validation set and loss is calculated. Unlike during training, the loss in validation is calculated as a pure Mean Squared Error loss with no penalties. The loss is then used to update the learning rate scheduler.
 
-        \subsubsection{Testing}
+        \subsubsection*{Testing}
             The testing dataset undergoes feature calculation and normalization in the same manner as the training set. An agent is created with a trading balance of \$100. The agent employs a simple trading algorithm that aims to only use strong positive signals. If the model predicts a high price increase $ \ge 5\% $ and a low price increase $ > -0.1\% $, the agent purchases the stock at the close price for that day. The agent's balance is evenly split between all of the stocks chosen by the model, as long as each getting a minimum of \$1.
             For each position that the agent opened, it closes the position at a price from the following day. The agent is attempting to sell the position a $ \ge 5\% $ increase, but will stop-loss if the price is $ \le -0.1\% $. The outcome of the position is determined using the logic detailed in ``Fig.~\ref{fig2}''. 
             The price that each position would've sold for is used to update the agent balance. Each position is checked first to see if the trading parameters would have caused it to sell at the open price. Then it is checked to see if it would sell during the day. Note the outcome where an a position value of both $ \le -0.1\% $ and $ \ge 5\% $ occur during a day. Since it is ambiguous which would've happened first when using daily candlestick data, it is considered a stop-loss in the interest of being conservative.
             \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{MM_testing.png}}
-            \caption{Possible position outcomes.}
+            \caption{Algorithm for determining price at which a position sells. The algorithm first checks to see if the position would sell at open. After this it examines mid-day prices to see if aim price or stop-loss price were hit. Note that if both of those occur, the outcome is ambiguous without more data and is given the stop-loss price in the interest of being conservative. If none of these occur, the stock sells at the close price.}
             \label{fig2}
             \end{figure}
-        Each position that is sold at or above the aim of a $ 5\% $ increase is counted as a successful trade and a true positive from the agents perspective. Each position that is sold at or below the stop-loss value of a $ -0.01\% $ is considered a false positive. Any position that does close at either the desired price or the stop-loss would be sold for the close price at the end of the day. Such situations are also considered unsuccessful.
+        Each position that is sold at or above the aim of a $ 5\% $ increase is counted as a successful trade and a true positive from the agents perspective. Each position that is sold for less than or equal to $ -0.01\% $ of the purchase price or that sells at the end of the day due to having no other opportunities to sell is considered a false positive.
         After process is repeated for every timestamp, the total balance increase is calculated for the whole time span, along with the rates at which each of the outcomes occur. These rates are used to calculate classification metrics like precision.  
 
-    \subsection{Selecting the size penalty coefficient}
+    \subsection{Selecting the Size Penalty Coefficient}
 
-        Using all of the general methods, 5 models were created with different size penalty coefficients. The values ranged from $ 2*10^{-5} $ to $ 5*10^{-4} $. The value $ 3*10^{-4} $ was selected because it had the highest precision and return when tested.
+        Using all of the methodology outlined in Section~\ref{subsec:gen_methods}, 5 models were created with different size penalty coefficients. The values ranged from $ 2\times10^{-5} $ to $ 5\times10^{-4} $. The value $ 3\times10^{-4} $ was selected because it had the highest precision and return when tested.
 
-    \subsection{Size penalty comparison with control model}
+    \subsection{Test Methods}
+    \label{subsec:ablation}
 
-        With the size penalty coefficient $ \Lambda $ selected, the model was then tested to see how it performed against a control model. Using the general methods, 8 models were trained with the size penalty coefficient $ \Lambda = 3*10^{-4} $. Each one was trained on market data from all 1500 stocks from 2013 through 2014. 
-        The collection of these models will be referred to as Group A. For each of these models, a corresponding model was trained with a size penalty coefficient $ \Lambda = 0 $. Each corresponding model used the same random seed for the training data shuffle, so as to have complete parity in every part of the training process except the size penalty.
-        This collection of models will be referred to as Group B. After testing all of the models on data from the year 2016, it was found that 5 of the 8 penalized models from Group A had a higher return than their Group B counterparts. The distributions of the total return at the end of the year for both model groups can be seen in ``Fig.~\ref{BW_return_seeds}''.
+        With the size penalty coefficient $ \lambda $ selected, the model was then tested to see how it performed against an ablated model. Using the general methods, 8 models were trained with the size penalty coefficient $ \lambda = 3\times10^{-4} $. Each one was trained on market data from all 1500 stocks from 2013 through 2014. 
+        The collection of these models will be referred to as Group A. For each of these models, a corresponding model was trained with a size penalty coefficient $ \lambda = 0 $. This is done in order to remove the term's effect on the loss entirely. Each corresponding model used the same random seed for the training data shuffle, so as to have complete parity in every part of the training process except the size penalty.
+        This collection of models will be referred to as Group B. 
+        
+    \subsection{Test Results}
+    \label{subsec:ablation_results}
+    
+        After testing all of the models on data from the year 2016, it was found that 5 of the 8 penalized models from Group A had a higher return than their Group B counterparts. The distributions of the total return at the end of the year for both model groups can be seen in ``Fig.~\ref{BW_return_seeds}''.
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_return_seeds.png}}
-            \caption{Distributions of annual returns for penalized and un-penalized models.}
+            \caption{Distributions of annual return from the year 2016 are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
             \label{BW_return_seeds}
         \end{figure}
 
         As indicated in ``Fig.~\ref{BW_return_seeds}'', both the median and mean return were higher in Group A compared to Group B.
-        The 2 groups had other performance differences. As intended, penalizing higher predictions lowered the positive rates for the agents using Group A models compared to Group B. 
+        The 2 groups had other performance differences. As intended, penalizing higher predictions lowered the positive rates for the agents using Group A models. 
         ``Fig.~\ref{BW_pos_seeds}'' illustrates this.
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_pos_seeds.png}}
-            \caption{Distributions of positive rates using penalized and un-penalized models.}
+            \caption{Distributions of positive rates are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
             \label{BW_pos_seeds}
         \end{figure}
 
-        The higher selectivity exhibited in Group B is also correlated with a higher precision as demonstrated in ``Fig.~\ref{BW_precs_seeds}''.
+        The higher selectivity exhibited in Group A is also correlated with a higher precision as demonstrated in ``Fig.~\ref{BW_precs_seeds}''.
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_precs_seeds.png}}
-            \caption{Distributions of precision using penalized and un-penalized models.}
+            \caption{Distributions of precision are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
             \label{BW_precs_seeds}
         \end{figure}
 
-        In 
-
+        These results indicate that the logit size penalty is improving model performance; however, all of these results summarize the temporal dimension rather than exploring it. It is worth examining, as seen in ``Fig.~\ref{CI_seeds}'', how the performance changes over time.
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/CI_chart.png}}
-            \caption{95\}
+            \caption{The mean balances of the agents using Group A and Group B models are shown over the course of the evaluation year, 2016. The shaded area around each line represents the 95\% confidence interval for the balance at that point.}
             \label{CI_seeds}
         \end{figure}
 
-\section{Significance over time}
-    
+        This reveals that at many points during the evaluation period, the Group B models were performing better on average.
+        Near the end of the year, the Group A models jump in performance may indicate that something about the market during the time period was favorable to the more selective models.
 
+\section{Temporal Generalization Test}
     
+    \subsection{Methods}
+        
+        The temporal generalization test was conducted using all of the methods outlined previously in Section~\ref{subsec:gen_methods}. The goal was to conduct the same type of ablation test as in Section~\ref{subsec:ablation}, but to test on multiple datasets that span multiple time periods.
+        For every consecutively 2 year period from 2013-2014 through 2020-2021, a new model was trained on that data using the size penalty coefficient $ \lambda = 3\times10^{-4} $. The collection of these models will be referenced as Group C. For each of these models, an ablated counterpart was created with identical training, except that the size penalty coefficient was set $ \lambda = 0 $.
+        These models will be collectively referred to as Group D. All of the models in Group C and Group D had the random elements of their training seeded with the singular value that seeded training for the upper median models in both Group A and Group B in terms of annual return and precision.
+        The models were tested on the 2nd year after the end of their training data, so as to avoid data leakage.
+
+    \subsection{Test Results}
+    
+        Similar to the results in Section~\ref{subsec:ablation_results}, both the median and mean annual return were higher for the agents who used who were trained with penalties. This is shown in ``Fig~.\ref{BW_return_time}''.
+
+        \begin{figure}[htbp]
+            \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_return_time.png}}
+            \caption{Distributions of annual returns are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
+            \label{BW_return_time}
+        \end{figure}
+
+        Also similar to the previous results, the size-penalized models in Group C have a lower positive rate and a higher precision on average. ``Fig~.\ref{BW_pos_time}'' and ``Fig~.\ref{BW_precs_time}'' demonstrate this.
+
+        \begin{figure}[htbp]
+            \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_pos_time.png}}
+            \caption{Distributions of positive rates are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
+            \label{BW_pos_time}
+        \end{figure}
+
+        \begin{figure}[htbp]
+            \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_precs_time.png}}
+            \caption{Distributions of precision are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
+            \label{BW_precs_time}
+        \end{figure}
 
 \section{Results}
 \section{Conclusion}

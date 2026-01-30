@@ -7,6 +7,8 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
@@ -59,11 +61,35 @@ fgdoane42@tntech.edu}
 \subsubsection{Split batches}
     The training data gets split into whole batches of size 200.
 \subsubsection{Initialize model}
-    The model is initialized with random parameters. The model is an LSTM with 1 hidden layer of size 64. The rest of the model architecture is depicted in ``Fig.~\ref{fig1}''.
+    The model is initialized with random parameters. The model architecture is depicted in ``Fig.~\ref{fig1}''.
+
+
+    % figure created with major help from ChatGPT
     \begin{figure}[htbp]
-    \centerline{\includegraphics[width=0.2\columnwidth]{MM_nn_structure.png}}
-    \caption{Model structure.}
-    \label{fig1}
+        \centering
+        \tikzset{%
+            layer/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.8cm, text centered, rounded corners},
+            arrow/.style={->, thick}
+        }
+
+        \begin{tikzpicture}[node distance=0.8cm]
+            % Layers
+            \node[layer] (input) {Input: 50$\times$10};
+            \node[layer, below=of input] (lstm) {LSMT: 64 hidden units};
+            \node[layer, below=of lstm] (full1) {Fully connected: 32 units, Leaky ReLU (leak = 1e-5)};
+            \node[layer, below=of full1] (full2) {Fully connected: 2 units};
+            \node[layer, below=of full2] (out) {Output};
+
+
+            % Arrows
+            \draw[arrow] (input) -- (lstm);
+            \draw[arrow] (lstm) -- (full1);
+            \draw[arrow] (full1) -- (full2);
+            \draw[arrow] (full2) -- (out);
+        \end{tikzpicture}
+
+        \caption{Model architecture.}
+        \label{fig1}
     \end{figure}
 
 \subsection{Training Loop (per epoch)}

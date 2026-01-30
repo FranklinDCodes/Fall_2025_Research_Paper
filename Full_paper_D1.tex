@@ -23,10 +23,16 @@ Cookeville, United States \\
 doanefranklin89@gmail.edu}
 }
 
-% talk about the goal of the penalty somewhere
+
+% todo now
+
 % emphasize difference between agent and model more when introduced and in first part of first sweep
-% all subtitles need to be title case (more caps)
+% add level deeper for related works
+
+% later
+
 % double check tense doesn't go present when it shouldn't
+
 
 % helpful note from Chat on captions for figures:
 % You should be able to flip through the paper, look only at the figures + captions, and understand what is being shown — but not why it matters.
@@ -42,6 +48,30 @@ doanefranklin89@gmail.edu}
 \end{IEEEkeywords}
 
 \section{Introduction}
+
+    The stock market is one of the greatest challenges for a data scientist. 
+    No where else in society does there exist such a straightforward translation from information to capital. 
+    And yet, anyone who wishes to harness information for trading must race against the speed at which the market integrates it.
+    With the introduction of machine learning algorithms, it becomes easier to find signals that may be hiding in the data, and that may be missed by the average trader.
+    However, there is inherent danger with every trade, no matter how strong the signal.
+
+    Trading stocks has a risk imbalance that favors harsh discrimination over careless investment.
+    It can be thought of as a classification problem, where the goal is to classify "good" and "bad" times to invest.
+    In that sense, it is more important in trading to have high levels of precision than it is to be highly accurate.
+    Missing 100 possible opportunities is worth it for the chance to be certain that a price will go up 1 time.
+    This need for precision and more than accuracy is something that may be given consideration with classification models, but goes completely unquantified with a regression model.
+
+    This work aims to be able to quantify that need with a regression model.
+    If a price prediction model is combined with a simple algorithm for deciding when to trade, then as the prediction model becomes more conservative with it's predictions, the algorithms outcomes should increase in precision.
+    This paper will explore a method by which to produce that result, and examine its effect on profitability.
+
+    \subsection*{Contributions}
+        \begin{enumerate}
+            \item{This paper proposes a logit size penalty loss term to control model predictions.}
+            \item{This paper will demonstrate adding this term will increase trading precision with an ablation study.}
+            \item{This paper will analyze how this term will affect profitability in a practical application.}
+        \end{enumerate}
+    
 
 \section{Related Work}
 
@@ -132,7 +162,7 @@ doanefranklin89@gmail.edu}
         The collection of these models will be referred to as Group A. For each of these models, a corresponding model was trained with a size penalty coefficient $ \lambda = 0 $. This is done in order to remove the term's effect on the loss entirely. Each corresponding model used the same random seed for the training data shuffle, so as to have complete parity in every part of the training process except the size penalty.
         This collection of models will be referred to as Group B. 
         
-    \subsection{Test Results}
+    \subsection{Outcomes}
     \label{subsec:ablation_results}
     
         After testing all of the models on data from the year 2016, it was found that 5 of the 8 penalized models from Group A had a higher return than their Group B counterparts. The distributions of the total return at the end of the year for both model groups can be seen in ``Fig.~\ref{BW_return_seeds}''.
@@ -164,7 +194,7 @@ doanefranklin89@gmail.edu}
         These results indicate that the logit size penalty is improving model performance; however, all of these results summarize the temporal dimension rather than exploring it. It is worth examining, as seen in ``Fig.~\ref{CI_seeds}'', how the performance changes over time.
 
         \begin{figure}[htbp]
-            \centerline{\includegraphics[width=\columnwidth]{paper_imgs/CI_chart.png}}
+            \centerline{\includegraphics[width=\columnwidth]{paper_imgs/CI_chart_seed.png}}
             \caption{The mean balances of the agents using Group A and Group B models are shown over the course of the evaluation year, 2016. The shaded area around each line represents the 95\% confidence interval for the balance at that point.}
             \label{CI_seeds}
         \end{figure}
@@ -172,26 +202,25 @@ doanefranklin89@gmail.edu}
         This reveals that at many points during the evaluation period, the Group B models were performing better on average.
         Near the end of the year, the Group A models jump in performance may indicate that something about the market during the time period was favorable to the more selective models.
 
-\section{Temporal Generalization Test}
+\section{Cross-Dataset Evaluation}
     
     \subsection{Methods}
         
-        The temporal generalization test was conducted using all of the methods outlined previously in Section~\ref{subsec:gen_methods}. The goal was to conduct the same type of ablation test as in Section~\ref{subsec:ablation}, but to test on multiple datasets that span multiple time periods.
-        For every consecutively 2 year period from 2013-2014 through 2020-2021, a new model was trained on that data using the size penalty coefficient $ \lambda = 3\times10^{-4} $. The collection of these models will be referenced as Group C. For each of these models, an ablated counterpart was created with identical training, except that the size penalty coefficient was set $ \lambda = 0 $.
-        These models will be collectively referred to as Group D. All of the models in Group C and Group D had the random elements of their training seeded with the singular value that seeded training for the upper median models in both Group A and Group B in terms of annual return and precision.
+        The cross-dataset evaluation was conducted using all of the methods outlined previously in Section~\ref{subsec:gen_methods}. The goal was to conduct the same type of ablation test as in Section~\ref{subsec:ablation}, but to test on multiple datasets that span multiple time periods.
+        For every consecutive 2 year period from 2013-2014 through 2020-2021, a new model was trained on that data using the size penalty coefficient $ \lambda = 3\times10^{-4} $. The collection of these models will be referenced as Group C. For each of these models, an ablated counterpart was created with identical training, except that the size penalty coefficient was set $ \lambda = 0 $.
+        These models will be collectively referred to as Group D. All of the models in Group C and Group D had the random elements of their training seeded with the singular value. This value was chosen to be the seed used for training for the upper median models in both Group A and Group B in terms of annual return and precision.
         The models were tested on the 2nd year after the end of their training data, so as to avoid data leakage.
 
-    \subsection{Test Results}
+    \subsection{Outcomes}
     
         Similar to the results in Section~\ref{subsec:ablation_results}, both the median and mean annual return were higher for the agents who used who were trained with penalties. This is shown in ``Fig~.\ref{BW_return_time}''.
-
+        Also similar to the previous results, the size-penalized models in Group C have a lower positive rate and a higher precision on average. ``Fig~.\ref{BW_pos_time}'' and ``Fig~.\ref{BW_precs_time}'' demonstrate this.
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_return_time.png}}
             \caption{Distributions of annual returns are shown for agents using the penalized and un-penalized models. Results are from evaluations ranging from 2016 through 2023. Mean values are indicated with an X.}
             \label{BW_return_time}
         \end{figure}
 
-        Also similar to the previous results, the size-penalized models in Group C have a lower positive rate and a higher precision on average. ``Fig~.\ref{BW_pos_time}'' and ``Fig~.\ref{BW_precs_time}'' demonstrate this.
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_pos_time.png}}
@@ -227,6 +256,13 @@ doanefranklin89@gmail.edu}
     The fact that the average true positive increases became more similar between the 2 groups in the temporal generalization test could help to explain why the average annual return became more similar for them as well.
     The overall magnitude of these trade increases also suggests that the agents are making most of their profits when they sell stocks for an opening price which exceeds their 5\% goal.
     Otherwise the average increase for a successful trade would be expected to be much closer to 5\%. 
+    ``Fig.~\ref{CI_time}'' shows the average performance over time for the models apart of the temporal generalization test in groups C and D. 
+
+    \begin{figure}[htbp]
+        \centerline{\includegraphics[width=\columnwidth]{paper_imgs/CI_chart_time.png}}
+        \caption{The mean balances of the agents using Group C and Group D models are shown over the course of the year. For each group, every model was trained and evaluated on a different timeframe. This means that the timeframe represented is not a specific year, but just shows the average of how each model performs when different portions of its evaluation year have elapsed. The shaded area around each line represents the 95\% confidence interval for the balance at that point.}
+        \label{CI_time}
+    \end{figure}
 
 \section{Conclusion}
 \section{Limitations}

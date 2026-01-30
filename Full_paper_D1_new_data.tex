@@ -24,6 +24,12 @@ doanefranklin89@gmail.edu}
 }
 
 
+% fix for new data
+
+% obv all charts
+% anything labeled with !!!
+
+
 % todo now
 
 % add level deeper for related works
@@ -32,10 +38,10 @@ doanefranklin89@gmail.edu}
 % WRITE SECTION FOR LAMBDA
 % contractions
 
+
 % later
 
 % double check tense doesn't go present when it shouldn't
-
 
 \maketitle
 
@@ -43,8 +49,8 @@ doanefranklin89@gmail.edu}
 
     Time series based regressors are a common tool for stock market prediction; however, they can fail to take into account the risk increase that comes with overestimation as opposed to underestimation.
     This paper proposes the use of a logit size penalty loss term that can quantify this risk imbalance and increase precision of trades.
-    The experiments show that using such penalties for an LSTM yielded a precision of 19.2\% and average annual return of 90.8\% when employed with a simple trading algorithm, compared to a precision of 10.2\% and average return of 47.7\% without the penalty.
-    A cross-dataset evaluation also demonstrated this to be similarly true over different time periods.
+    The experiments show that using such penalties for an LSTM yielded a precision of !!!19.2\% and average annual return of !!!90.8\% when employed with a simple trading algorithm, compared to a precision of !!!10.2\% and average return of !!!47.7\% without the penalty.
+    !!!A cross-dataset evaluation also demonstrated this to be similarly true over different time periods.
     These results suggest that penalizing predictor logits can force them to become more conservative in their price estimates, and this correlates to higher profits.
 
 \end{abstract}
@@ -96,19 +102,19 @@ doanefranklin89@gmail.edu}
 
     % go one level deeper on these
 
-\section{Size Penalty Ablation Test}
+\section{Selecting a Penalty Coefficient}
 
     \subsection{General Methods}
     \label{subsec:gen_methods}
 
         \subsubsection*{Dataset creation}
-            The all datasets were created by downloading data consisting of daily OHLCV values for each stock being used. The list of stocks being used was determined by picking the 1500 stocks with the largest market cap that also have data for the time periods that the datasets intend to cover.
+            The all datasets were created by compiling data consisting of daily OHLCV values for each stock being used. The list of stocks being used was determined by picking the 1500 stocks with the largest market cap that also have data for the time periods that the datasets intend to cover.
 
         \subsubsection*{Training setup}
             The dataset is loaded and the day of the week is 1-hot-encoded into 5 separate features that are added.
             The data then gets cut into time series, each with a length of 50. The data from the day following each time series is used to create the label, which consist of the relative increase in high price and low price compared to the close price of the previous day.
             Each training example gets all of it's price data normalized together on a scale of -1 to 1. Similarly, the volume data gets normalized on a scale of -1 to 1.
-            15\% of the training examples are sliced off of the back of the dataset to become the validation set.
+            500 batches are sliced off of the back of the dataset to become the validation set.
             The ordering of the training set gets shuffled according to a random seed.
             The training data gets split into whole batches of size 200.
             The model is initialized with random parameters. The model architecture is depicted in ``Fig.~\ref{fig1}''.
@@ -143,11 +149,12 @@ doanefranklin89@gmail.edu}
         \subsubsection*{Training methods}
             The loss for each batch is calculated with formula ``\eqref{loss}'' . The formula utilizes Mean Squared Error loss and a magnitude penalty for the logits.
             \begin{equation}
-                Loss = mse(Y, \hat{Y}) + \lambda\sum_{i=1}^{B}(\hat{Y}_{i, 1}) - \lambda\sum_{i=1}^{B}(\hat{Y}_{i, 2})\label{loss}
+                Loss = mse(Y, \hat{Y}) + \lambda\sum_{i=1}^{B}(\hat{Y}_{i, 1}) + \lambda\sum_{i=1}^{B}(\hat{Y}_{i, 2})\label{loss}
             \end{equation}
             Here the logit at index 0 is the high price that the model is predicting, and at index 1 is the low price. B represents the batch size, and $\lambda$ is the size penalty coefficient.
             The loss is backpropagated for each batch, and the parameters are updated with the Adam optimizer. The learning rate for the optimizer starts at 1e-3, and is set by PyTorch's LowerOnPlateau scheduler. The metric tracked by the scheduler is validation loss.
             At the end of each epoch, validation occurs. The model predicts all of the examples in the validation set and loss is calculated. Unlike during training, the loss in validation is calculated as a pure Mean Squared Error loss with no penalties. The loss is then used to update the learning rate scheduler.
+            All models are trained for 30 epochs.
 
         \subsubsection*{Testing}
             The testing dataset undergoes feature calculation and normalization in the same manner as the training set. An agent is created with a trading balance of \$100. The agent employs a simple trading algorithm that aims to only use strong positive signals. If the model predicts a high price increase $ \ge 5\% $ and a low price increase $ > -0.1\% $, the agent purchases the stock at the close price for that day. The agent's balance is evenly split between all of the stocks chosen by the model, as long as each getting a minimum of \$1.
@@ -158,24 +165,32 @@ doanefranklin89@gmail.edu}
             \caption{Algorithm for determining price at which a position sells. The algorithm first checks to see if the position would sell at open. After this it examines mid-day prices to see if aim price or stop-loss price were hit. Note that if both of those occur, the outcome is ambiguous without more data and is given the stop-loss price in the interest of being conservative. If none of these occur, the stock sells at the close price.}
             \label{fig2}
             \end{figure}
-        Each position that is sold at or above the aim of a $ 5\% $ increase is counted as a successful trade and a true positive from the agents perspective. Each position that is sold for less than or equal to $ -0.01\% $ of the purchase price, or that sells at the end of the day due to having no other opportunities to sell, is considered a false positive.
-        After process is repeated for every timestamp, the total balance increase is calculated for the whole time span, along with the rates at which each of the outcomes occur. These rates are used to calculate classification metrics like precision.  
+            Each position that is sold at or above the aim of a $ 5\% $ increase is counted as a successful trade and a true positive from the agents perspective. Each position that is sold for less than or equal to $ -0.01\% $ of the purchase price, or that sells at the end of the day due to having no other opportunities to sell, is considered a false positive.
+            After process is repeated for every timestamp, the total balance increase is calculated for the whole time span, along with the rates at which each of the outcomes occur. These rates are used to calculate classification metrics like precision.  
 
-    \subsection{Selecting the Size Penalty Coefficient}
+    \subsection{Coefficient Study}
 
-        Using all of the methodology outlined in Section~\ref{subsec:gen_methods}, 5 models were created with different size penalty coefficients. The values ranged from $ 2\times10^{-5} $ to $ 5\times10^{-4} $. The value $ 3\times10^{-4} $ was selected because it had the highest precision and return when tested.
+        Using the general methods, 6 models were created. All were trained on data from 2013-2014, and testing on data from 2016. 
+        Each was identical in every aspect of training and testing, except for the size penalty coefficient.
+        The first model was given a coefficient $ \lambda = 2.5\times10^{-6} $. The values for the other models increased logarithmically, ending with the largest model where $ \lambda = 7.5\times10^{-4} $. 
+        The model with the value $ \lambda = 7.5\times10^{-6} $ performed best in testing in terms of both precision and return.
+        3 additional models were then created to sample more values in light of this, but it was found that $ 7.5\times10^{-6} $ still was the best performing.
+        Unless stated otherwise, all models in the remainder of this paper that are penalized will use this value as the penalty coefficient.
+
+
+\section{Size Penalty Ablation Test}
 
     \subsection{Test Methods}
     \label{subsec:ablation}
 
-        With the size penalty coefficient $ \lambda $ selected, the model was then tested to see how it performed against an ablated model. Using the general methods, 8 models were trained with the size penalty coefficient $ \lambda = 3\times10^{-4} $. Each one was trained on market data from all 1500 stocks from 2013 through 2014. 
+        With the size penalty coefficient $ \lambda $ selected, the model was then tested to see how it performed against an ablated model. Using the general methods, 8 models were trained with the size penalty coefficient $ \lambda = 7.5\times10^{-6} $. Each one was trained on market data from all 1500 stocks from 2013 through 2014. 
         The collection of these models will be referred to as Group A. For each of these models, a corresponding model was trained with a size penalty coefficient $ \lambda = 0 $. This is done in order to remove the term's effect on the loss entirely. Each corresponding model used the same random seed for the training data shuffle, so as to have complete parity in every part of the training process except the size penalty.
         This collection of models will be referred to as Group B. 
         
     \subsection{Outcomes}
     \label{subsec:ablation_results}
     
-        After testing all of the models on data from the year 2016, it was found that 5 of the 8 penalized models from Group A had a higher return than their Group B counterparts. The distributions of the total return at the end of the year for both model groups can be seen in ``Fig.~\ref{BW_return_seeds}''.
+        After testing all of the models on data from the year 2016, it was found that !!!5 of the 8 penalized models from Group A had a higher return than their Group B counterparts. The distributions of the total return at the end of the year for both model groups can be seen in ``Fig.~\ref{BW_return_seeds}''.
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_return_seeds.png}}
@@ -183,7 +198,7 @@ doanefranklin89@gmail.edu}
             \label{BW_return_seeds}
         \end{figure}
 
-        As indicated in ``Fig.~\ref{BW_return_seeds}'', both the median and mean return were higher in Group A compared to Group B.
+        As indicated in ``Fig.~\ref{BW_return_seeds}'', both the !!!median and mean return were higher in Group A compared to Group B.
         The 2 groups had other performance differences. As intended, penalizing higher predictions lowered the positive rates for the agents using Group A models. 
         ``Fig.~\ref{BW_pos_seeds}'' illustrates this.
 
@@ -193,7 +208,7 @@ doanefranklin89@gmail.edu}
             \label{BW_pos_seeds}
         \end{figure}
 
-        The higher selectivity exhibited in Group A is also correlated with a higher precision as demonstrated in ``Fig.~\ref{BW_precs_seeds}''.
+        The higher selectivity exhibited in Group A is also !!!correlated with a higher precision as demonstrated in ``Fig.~\ref{BW_precs_seeds}''.
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_precs_seeds.png}}
@@ -201,7 +216,7 @@ doanefranklin89@gmail.edu}
             \label{BW_precs_seeds}
         \end{figure}
 
-        These results indicate that the logit size penalty is improving model performance; however, all of these results summarize the temporal dimension rather than exploring it. It is worth examining, as seen in ``Fig.~\ref{CI_seeds}'', how the performance changes over time.
+        These results !!!indicate that the logit size penalty is improving model performance; however, all of these results summarize the temporal dimension rather than exploring it. It is worth examining, as seen in ``Fig.~\ref{CI_seeds}'', how the performance changes over time.
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/CI_chart_seed.png}}
@@ -209,15 +224,15 @@ doanefranklin89@gmail.edu}
             \label{CI_seeds}
         \end{figure}
 
-        This reveals that at many points during the evaluation period, the Group B models were performing better on average.
-        Near the end of the year, the Group A models jump in performance may indicate that something about the market during the time period was favorable to the more selective models.
+        !!!This reveals that at many points during the evaluation period, the Group B models were performing better on average.
+        !!!Near the end of the year, the Group A models jump in performance may indicate that something about the market during the time period was favorable to the more selective models.
 
 \section{Cross-Dataset Evaluation}
     
     \subsection{Methods}
         
         The cross-dataset evaluation was conducted using all of the methods outlined previously in Section~\ref{subsec:gen_methods}. The goal was to conduct the same type of ablation test as in Section~\ref{subsec:ablation}, but to test on multiple datasets that span multiple time periods.
-        For every consecutive 2 year period from 2013-2014 through 2020-2021, a new model was trained on that data using the size penalty coefficient $ \lambda = 3\times10^{-4} $. The collection of these models will be referenced as Group C. For each of these models, an ablated counterpart was created with identical training, except that the size penalty coefficient was set $ \lambda = 0 $.
+        For every consecutive 2 year period from 2013-2014 through 2020-2021, a new model was trained on that data using the size penalty as described in previous sections. The collection of these models will be referenced as Group C. For each of these models, an ablated counterpart was created with identical training, except that the size penalty coefficient was set $ \lambda = 0 $.
         These models will be collectively referred to as Group D. All of the models in Group C and Group D had the random elements of their training seeded with the singular value. This value was chosen to be the seed used for training for the upper median models in both Group A and Group B in terms of annual return and precision.
         The models were tested on the 2nd year after the end of their training data, so as to avoid data leakage.
 
@@ -246,11 +261,11 @@ doanefranklin89@gmail.edu}
 
 \section{Results}
     The results from both tests indicate a performative advantage with using the size penalty loss terms during training. 
-    The mean annual return from using the models in Group A is 90.8\% as opposed to the 47.7\% from Group B.
-    The values for both of these are larger and farther apart than the means for Groups C and D, which are 25.6\% and 16.3\% respectively.
-    The mean precision from trading with the models in Group A was 19.2\% on average, as opposed to the 10.1\% from Group B.
-    A similar pattern was seen in the cross-dataset evaluation, where Group C and D produced precisions of 19.6\% and 7.8\% respectively.
-    In both tests, the agents using size penalized models were seen to have a higher increase on average for each true positive. 
+    !!!The mean annual return from using the models in Group A is 90.8\% as opposed to the 47.7\% from Group B.
+    !!!The values for both of these are larger and farther apart than the means for Groups C and D, which are 25.6\% and 16.3\% respectively.
+    !!!The mean precision from trading with the models in Group A was 19.2\% on average, as opposed to the 10.1\% from Group B.
+    !!!A similar pattern was seen in the cross-dataset evaluation, where Group C and D produced precisions of 19.6\% and 7.8\% respectively.
+    !!!In both tests, the agents using size penalized models were seen to have a higher increase on average for each true positive. 
     These findings are illustrated in ``Fig.~\ref{BW_win_seeds}'' and ``Fig.~\ref{BW_win_time}''.
 
     \begin{figure}[htbp]
@@ -265,9 +280,9 @@ doanefranklin89@gmail.edu}
         \label{BW_win_time}
     \end{figure}
 
-    The fact that the average true positive increases became more similar between the 2 groups in the temporal generalization test could help to explain why the average annual return became more similar for them as well.
-    The overall magnitude of these trade increases also suggests that the agents are making most of their profits when they sell stocks for an opening price which exceeds their 5\% goal.
-    Otherwise the average increase for a successful trade would be expected to be much closer to 5\%. 
+    !!!The fact that the average true positive increases became more similar between the 2 groups in the temporal generalization test could help to explain why the average annual return became more similar for them as well.
+    !!!The overall magnitude of these trade increases also suggests that the agents are making most of their profits when they sell stocks for an opening price which exceeds their 5\% goal.
+    !!!Otherwise the average increase for a successful trade would be expected to be much closer to 5\%. 
     ``Fig.~\ref{CI_time}'' shows the average performance over time for the models apart of the temporal generalization test in groups C and D. 
 
     \begin{figure}[htbp]
@@ -279,10 +294,10 @@ doanefranklin89@gmail.edu}
 \section{Conclusion}
 
     This paper investigated using logit size penalties to make price predictors less prone to over-estimation and increase precision of trading algorithms.
-    The conducted ablation study demonstrated that models with this penalty did produce trading algorithms with consistently higher precision than those without it.
-    This paper demonstrated that this result could also be repeated with data from different timeframes.
-    Along with the increase in precision, trading with the penalized models also yielded an increased return.
-    This indicates that quantifying the risk of over-estimation did correlate with higher profitability.
+    !!!The conducted ablation study demonstrated that models with this penalty did produce trading algorithms with consistently higher precision than those without it.
+    !!!This paper demonstrated that this result could also be repeated with data from different timeframes.
+    !!!Along with the increase in precision, trading with the penalized models also yielded an increased return.
+    !!!This indicates that quantifying the risk of over-estimation did correlate with higher profitability.
 
     Future work in this area should explore conducting studies that test different trading strategies in conjunction with penalized models.
     It is worth investigating how these results may vary when used with different price aims and less strict stop-losses. 

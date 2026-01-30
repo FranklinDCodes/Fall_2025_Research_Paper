@@ -139,7 +139,7 @@ doanefranklin89@gmail.edu}
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_return_seeds.png}}
-            \caption{Distributions of annual return from the year 2016 are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
+            \caption{Distributions of annual return from the year 2016 are shown for agents using penalized and un-penalized models in their evaluations on the data from the year 2016. Mean values are indicated with an X.}
             \label{BW_return_seeds}
         \end{figure}
 
@@ -149,7 +149,7 @@ doanefranklin89@gmail.edu}
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_pos_seeds.png}}
-            \caption{Distributions of positive rates are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
+            \caption{Distributions of positive rates are shown for agents using penalized and un-penalized models in their evaluations on the data from the year 2016. Mean values are indicated with an X.}
             \label{BW_pos_seeds}
         \end{figure}
 
@@ -157,7 +157,7 @@ doanefranklin89@gmail.edu}
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_precs_seeds.png}}
-            \caption{Distributions of precision are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
+            \caption{Distributions of precision are shown for agents using penalized and un-penalized models in their evaluations on the data from the year 2016. Mean values are indicated with an X.}
             \label{BW_precs_seeds}
         \end{figure}
 
@@ -187,7 +187,7 @@ doanefranklin89@gmail.edu}
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_return_time.png}}
-            \caption{Distributions of annual returns are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
+            \caption{Distributions of annual returns are shown for agents using the penalized and un-penalized models. Results are from evaluations ranging from 2016 through 2023. Mean values are indicated with an X.}
             \label{BW_return_time}
         \end{figure}
 
@@ -195,17 +195,39 @@ doanefranklin89@gmail.edu}
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_pos_time.png}}
-            \caption{Distributions of positive rates are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
+            \caption{Distributions of positive rates are shown for agents using penalized and un-penalized models. Results are from evaluations ranging from 2016 through 2023. Mean values are indicated with an X.}
             \label{BW_pos_time}
         \end{figure}
 
         \begin{figure}[htbp]
             \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_precs_time.png}}
-            \caption{Distributions of precision are shown for agents using penalized and un-penalized models. Mean values are indicated with an X.}
+            \caption{Distributions of precision are shown for agents using penalized and un-penalized models. Results are from evaluations ranging from 2016 through 2023. Mean values are indicated with an X.}
             \label{BW_precs_time}
         \end{figure}
 
 \section{Results}
+    The results from both tests indicate a performative advantage with using the size penalty loss terms during training. 
+    The mean annual return from using the models in Group A is 90.8\% as opposed to the 47.7\% from Group B.
+    The values for both of these are larger and farther apart than the means for Groups C and D, which are 25.6\% and 16.3\% respectively.
+    In both tests, the agents using size penalized models were seen to have a higher increase on average for each true positive. 
+    These findings are illustrated in ``Fig.~\ref{BW_win_seeds}'' and ``Fig.~\ref{BW_win_time}''.
+
+    \begin{figure}[htbp]
+        \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_win_seeds.png}}
+        \caption{Distributions of precision are shown for agents using penalized and un-penalized models from their evaluation on data from the year 2016. Results are from evaluations ranging from 2016 through 2023. Mean values are indicated with an X.}
+        \label{BW_win_seeds}
+    \end{figure}
+
+    \begin{figure}[htbp]
+        \centerline{\includegraphics[width=\columnwidth]{paper_imgs/BW_win_time.png}}
+        \caption{Distributions of precision are shown for agents using penalized and un-penalized models. Results are from evaluations ranging from 2016 through 2023. Mean values are indicated with an X.}
+        \label{BW_win_time}
+    \end{figure}
+
+    The fact that the average true positive increases became more similar between the 2 groups in the temporal generalization test could help to explain why the average annual return became more similar for them as well.
+    The overall magnitude of these trade increases also suggests that the agents are making most of their profits when they sell stocks for an opening price which exceeds their 5\% goal.
+    Otherwise the average increase for a successful trade would be expected to be much closer to 5\%. 
+
 \section{Conclusion}
 \section{Limitations}
 
